@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f7f6;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* Login Overlay CSS */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .login-box {
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-box h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .login-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .login-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            background: #0056b3;
+        }
+
+        .error-msg {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Main Dashboard Styling */
+        .dashboard-box {
+            width: 100%;
+            max-width: 1200px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.1);
+            margin-top: 40px;
+            display: none; /* Initially Hidden */
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h2 {
+            color: #333;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .logout-btn:hover {
+            background: #bd2130;
+        }
+
+        .action-section {
+            margin-bottom: 30px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .action-section h3 {
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+            background: white;
+        }
+
+        .input-field:focus {
+            border-color: #28a745;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            transition: background 0.2s;
+        }
+
+        .btn-present { background: #28a745; }
+        .btn-present:hover { background: #218838; }
+
+        .btn-absent { background: #ffc107; color: #333; }
+        .btn-absent:hover { background: #e0a800; }
+
+        .btn-cancel {
+            background: #6c757d;
+            display: none;
+        }
+        .btn-cancel:hover { background: #5a6268; }
+
+        .search-excel-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-container {
+            flex: 2;
+            min-width: 250px;
+        }
+        .search-field {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .filter-container {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .excel-btn {
+            background: #1d723a;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .excel-btn:hover {
+            background: #155229;
+        }
+
+        .logs-section h3 {
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .status-present { background: #d4edda; color: #155724; }
+        .status-absent { background: #f8d7da; color: #721c24; }
+
+        .ot-positive { color: #28a745; font-weight: bold; }
+        .ot-negative { color: #dc3545; font-weight: bold; }
+        .ot-normal { color: #555; }
+
+        .action-cell {
+            display: flex;
+            gap: 5px;
+        }
+
+        .edit-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .edit-btn:hover {
+            background: #0069d9;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-overlay">
+    <div class="login-box">
+        <h2>🔒 Dashboard Login</h2>
+        <div class="login-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" class="input-field" placeholder="Enter Username">
+        </div>
+        <div class="login-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" class="input-field" placeholder="Enter Password">
+        </div>
+        <button class="login-btn" onclick="checkLogin()">Login</button>
+        <p id="errorMsg" class="error-msg">❌ Invalid Username or Password!</p>
+    </div>
+</div>
+
+<div id="dashboardContent" class="dashboard-box">
+    
+    <div class="header">
+        <h2>Dashboard</h2>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="action-section">
+        <h3 id="actionTitle">Mark Today's Attendance</h3>
+        
+        <div class="form-row">
+            <div class="input-group" style="flex: 0.7; min-width: 120px;">
+                <label for="empCode">Emp Code</label>
+                <input type="text" id="empCode" class="input-field" placeholder="e.g. 101, 102...">
+            </div>
+            <div class="input-group" style="flex: 1.3;">
+                <label for="empName">Employee Name</label>
+                <input type="text" id="empName" class="input-field" placeholder="Enter Name...">
+            </div>
+            <div class="input-group">
+                <label for="empDesignation">Designation</label>
+                <input type="text" id="empDesignation" class="input-field" placeholder="e.g. Guard, Supervisor...">
+            </div>
+            <div class="input-group">
+                <label for="empRole">Duty Hours / Type</label>
+                <input type="text" id="empRole" class="input-field" placeholder="e.g. 8, 9, 12 Hrs...">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="input-group">
+                <label for="inDate">In-Date</label>
+                <input type="date" id="inDate" class="input-field">
+            </div>
+            <div class="input-group">
+                <label for="inTime">In-Time</label>
+                <input type="time" id="inTime" class="input-field">
+            </div>
+            <div class="input-group">
+                <label for="outDate">Out-Date</label>
+                <input type="date" id="outDate" class="input-field">
+            </div>
+            <div class="input-group">
+                <label for="outTime">Out-Time</label>
+                <input type="time" id="outTime" class="input-field">
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button id="btnPresent" class="btn btn-present" onclick="markAttendance('Present')">✔ Present</button>
+            <button id="btnAbsent" class="btn btn-absent" onclick="markAttendance('Absent')">✖ Absent</button>
+            <button id="btnCancel" class="btn btn-cancel" onclick="resetForm()">Cancel Edit</button>
+        </div>
+    </div>
+
+    <div class="logs-section">
+        <h3>Attendance Logs</h3>
+        
+        <div class="search-excel-row">
+            <div class="search-container">
+                <input type="text" id="searchBar" class="search-field" placeholder="🔍 Search by Code, Name or Designation..." onkeyup="showLogs()">
+            </div>
+            <div class="filter-container">
+                <select id="statusFilter" class="input-field" onchange="showLogs()" style="border: 2px solid #007bff; height: 48px;">
+                    <option value="All">All Status (Present + Absent)</option>
+                    <option value="Present">🟢 Present Only</option>
+                    <option value="Absent">🔴 Absent Only</option>
+                </select>
+            </div>
+            <button class="excel-btn" style="height: 48px;" onclick="exportToExcel()">📊 Export to Excel</button>
+        </div>
+
+        <div class="table-responsive">
+            <table id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th>Code</th> 
+                        <th>Name</th>
+                        <th>Designation</th>
+                        <th>Type</th>
+                        <th>In-Date</th> 
+                        <th>In-Time</th>
+                        <th>Out-Date</th> 
+                        <th>Out-Time</th>
+                        <th>Total Hrs</th>
+                        <th>OT / Shortage</th>
+                        <th>Status</th>
+                        <th class="no-export">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="logTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let editId = null;
+
+    window.onload = function() {
+        if (sessionStorage.getItem("loggedIn") === "true") {
+            showDashboard();
+        } else {
+            hideDashboard();
+        }
+    };
+
+    function checkLogin() {
+        let user = document.getElementById("username").value.trim();
+        let pass = document.getElementById("password").value.trim();
+        let error = document.getElementById("errorMsg");
+
+        if (user === "ATTENDENCE" && pass === "@2026") {
+            sessionStorage.setItem("loggedIn", "true");
+            error.style.display = "none";
+            showDashboard();
+        } else {
+            error.style.display = "block";
+        }
+    }
+
+    function showDashboard() {
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("dashboardContent").style.display = "block";
+        setCurrentDate();
+        showLogs();
+    }
+
+    function hideDashboard() {
+        document.getElementById("loginScreen").style.display = "flex";
+        document.getElementById("dashboardContent").style.display = "none";
+    }
+
+    function logout() {
+        sessionStorage.removeItem("loggedIn");
+        document.getElementById("username").value = "";
+        document.getElementById("password").value = "";
+        hideDashboard();
+    }
+
+    function setCurrentDate() {
+        let today = new Date().toISOString().split('T')[0];
+        document.getElementById("inDate").value = today;
+        document.getElementById("outDate").value = today;
+    }
+
+    // Minutes level par sateek difference nikalne ka function
+    function calculateTotalMinutes(inDate, inTime, outDate, outTime) {
+        if (!inDate || !inTime || !outDate || !outTime) return 0;
+
+        let startDateTime = new Date(`${inDate}T${inTime}`);
+        let endDateTime = new Date(`${outDate}T${outTime}`);
+
+        if (endDateTime < startDateTime) {
+            endDateTime.setDate(endDateTime.getDate() + 1);
+        }
+
+        let diffMs = endDateTime - startDateTime;
+        return Math.round(diffMs / (1000 * 60)); // Total Minutes return karega
+    }
+
+    // Minutes ko "X Hrs Y Mins" text format mein badalne ka function
+    function formatMinutesToHrsMins(totalMinutes) {
+        let hrs = Math.floor(totalMinutes / 60);
+        let mins = totalMinutes % 60;
+        return `${hrs} Hrs ${mins} Mins`;
+    }
+
+    function markAttendance(status) {
+        let codeInput = document.getElementById("empCode").value.trim();
+        let nameInput = document.getElementById("empName").value.trim();
+        let designationInput = document.getElementById("empDesignation").value.trim();
+        let roleInput = document.getElementById("empRole").value.trim(); 
+        let inDateInput = document.getElementById("inDate").value;
+        let inTimeInput = document.getElementById("inTime").value;
+        let outDateInput = document.getElementById("outDate").value;
+        let outTimeInput = document.getElementById("outTime").value;
+
+        if (nameInput === "") {
+            alert("Please enter Employee Name!");
+            return;
+        }
+
+        if (roleInput === "") {
+            alert("Please enter Duty Hours / Type!");
+            return;
+        }
+
+        let attendanceList = JSON.parse(localStorage.getItem("attendanceData")) || [];
+
+        let displayTotalHoursText = "0 Hrs 0 Mins";
+        let otStatus = "-";
+        
+        let extractedNumber = roleInput.match(/[\d.]+/);
+        let standardHours = extractedNumber ? parseFloat(extractedNumber[0]) : 8; 
+        let standardMinutes = standardHours * 60; // Standard shift in minutes
+        
+        if (status === 'Present') {
+            if (!inDateInput || !inTimeInput || !outDateInput || !outTimeInput) {
+                alert("Please fill both In (Date & Time) and Out (Date & Time) fields!");
+                return;
+            }
+
+            let actualMinutes = calculateTotalMinutes(inDateInput, inTimeInput, outDateInput, outTimeInput);
+            displayTotalHoursText = formatMinutesToHrsMins(actualMinutes);
+            
+            let diffMinutes = actualMinutes - standardMinutes;
+            
+            if (diffMinutes > 0) {
+                otStatus = `+${formatMinutesToHrsMins(diffMinutes)} OT`;
+            } else if (diffMinutes < 0) {
+                // Shortage ko positive number bana kar format karne ke liye Math.abs use kiya
+                otStatus = `${formatMinutesToHrsMins(Math.abs(diffMinutes))} Short`;
+            } else {
+                otStatus = "On Time";
+            }
+        } else if (status === 'Absent') {
+            inDateInput = inDateInput || "-";
+            outDateInput = "-";
+            inTimeInput = "-";
+            outTimeInput = "-";
+            displayTotalHoursText = "0 Hrs 0 Mins";
+            otStatus = "Absent";
+        }
+
+        if (editId === null) {
+            let newRecord = {
+                id: new Date().getTime(),
+                code: codeInput || "-", 
+                name: nameInput,
+                designation: designationInput || "N/A",
+                role: roleInput, 
+                inDate: inDateInput,
+                inTime: inTimeInput,
+                outDate: outDateInput,
+                outTime: outTimeInput,
+                totalHours: displayTotalHoursText,
+                otStatus: otStatus,
+                status: status
+            };
+            attendanceList.push(newRecord);
+            alert("Attendance Logged!");
+        } else {
+            let index = attendanceList.findIndex(item => item.id == editId);
+            if(index !== -1) {
+                attendanceList[index] = {
+                    id: editId,
+                    code: codeInput || "-", 
+                    name: nameInput,
+                    designation: designationInput || "N/A",
+                    role: roleInput, 
+                    inDate: inDateInput,
+                    inTime: inTimeInput,
+                    outDate: outDateInput,
+                    outTime: outTimeInput,
+                    totalHours: displayTotalHoursText,
+                    otStatus: otStatus,
+                    status: status
+                };
+                alert("Attendance Updated!");
+            }
+        }
+        
+        localStorage.setItem("attendanceData", JSON.stringify(attendanceList));
+        resetForm();
+        showLogs();
+    }
+
+    function showLogs() {
+        let attendanceList = JSON.parse(localStorage.getItem("attendanceData")) || [];
+        let tableBody = document.getElementById("logTable");
+        let searchQuery = document.getElementById("searchBar").value.toLowerCase();
+        let selectedStatus = document.getElementById("statusFilter").value;
+        
+        tableBody.innerHTML = ""; 
+
+        for(let i = attendanceList.length - 1; i >= 0; i--) {
+            let record = attendanceList[i];
+            
+            let code = record.code ? record.code.toLowerCase() : "";
+            let name = record.name ? record.name.toLowerCase() : "";
+            let designation = record.designation ? record.designation.toLowerCase() : "";
+            
+            if(!code.includes(searchQuery) && !name.includes(searchQuery) && !designation.includes(searchQuery)) {
+                continue;
+            }
+
+            if(selectedStatus !== "All" && record.status !== selectedStatus) {
+                continue;
+            }
+
+            let badgeClass = record.status === 'Present' ? 'status-present' : 'status-absent';
+            
+            let otClass = "ot-normal";
+            if(record.otStatus && record.otStatus.includes("OT")) otClass = "ot-positive";
+            if(record.otStatus && record.otStatus.includes("Short")) otClass = "ot-negative";
+            if(record.status === "Absent") otClass = "ot-negative";
+
+            let row = `<tr>
+                <td><b>${record.code || "-"}</b></td> 
+                <td><b>${record.name}</b></td>
+                <td>${record.designation}</td>
+                <td>${record.role}</td>
+                <td>${record.inDate || "-"}</td>
+                <td>${record.inTime}</td>
+                <td>${record.outDate || "-"}</td>
+                <td>${record.outTime}</td>
+                <td>${record.totalHours || "-"}</td>
+                <td><span class="${otClass}">${record.otStatus || "-"}</span></td>
+                <td><span class="status-badge ${badgeClass}">${record.status}</span></td>
+                <td class="no-export">
+                    <div class="action-cell">
+                        <button class="edit-btn" onclick="editLog(${record.id})">✏ Edit</button>
+                    </div>
+                </td>
+            </tr>`;
+            
+            tableBody.innerHTML += row;
+        }
+    }
+
+    function exportToExcel() {
+        let table = document.getElementById("attendanceTable");
+        let tableClone = table.cloneNode(true);
+        tableClone.querySelectorAll('.no-export').forEach(el => el.remove());
+
+        let wb = XLSX.utils.table_to_book(tableClone, { sheet: "Attendance Report" });
+        let fileName = "Attendance_Report_" + new Date().toISOString().split('T')[0] + ".xlsx";
+        XLSX.writeFile(wb, fileName);
+    }
+
+    function editLog(id) {
+        let attendanceList = JSON.parse(localStorage.getItem("attendanceData")) || [];
+        let record = attendanceList.find(item => item.id == id);
+
+        if(!record) return;
+
+        document.getElementById("empCode").value = record.code !== "-" ? record.code : "";
+        document.getElementById("empName").value = record.name || "";
+        document.getElementById("empDesignation").value = record.designation || "";
+        document.getElementById("empRole").value = record.role || ""; 
+        
+        document.getElementById("inDate").value = record.inDate !== "-" ? record.inDate : "";
+        document.getElementById("inTime").value = record.inTime !== "-" ? record.inTime : "";
+        document.getElementById("outDate").value = record.outDate !== "-" ? record.outDate : "";
+        document.getElementById("outTime").value = record.outTime !== "-" ? record.outTime : "";
+        
+        document.getElementById("actionTitle").innerText = "✏ Edit Attendance Mode";
+        document.getElementById("btnPresent").innerText = "✔ Update As Present";
+        document.getElementById("btnAbsent").innerText = "✖ Update As Absent";
+        document.getElementById("btnCancel").style.display = "block";
+
+        editId = id;
+    }
+
+    function resetForm() {
+        document.getElementById("empCode").value = "";
+        document.getElementById("empName").value = "";
+        document.getElementById("empDesignation").value = "";
+        document.getElementById("empRole").value = ""; 
+        setCurrentDate();
+        document.getElementById("inTime").value = "";
+        document.getElementById("outTime").value = "";
+        
+        document.getElementById("actionTitle").innerText = "Mark Today's Attendance";
+        document.getElementById("btnPresent").innerText = "✔ Present";
+        document.getElementById("btnAbsent").innerText = "✖ Absent";
+        document.getElementById("btnCancel").style.display = "none";
+        editId = null;
+    }
+</script>
+
+</body>
+</html>
